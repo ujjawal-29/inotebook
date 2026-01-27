@@ -1,18 +1,19 @@
 const express = require('express');
-const connectToMongo = require('./backend/db'); // <- backend folder में db.js
+const connectToMongo = require('./backend/db');
 var cors = require('cors');
 
-connectToMongo(); // MongoDB connect
+connectToMongo();
+
 const app = express();
-const port = 5000;
+const port = process.env.PORT || 5000;   // 🔥 यही सबसे जरूरी लाइन
 
 app.use(cors());
 app.use(express.json());
 
 // Available Routes
-app.use('/api/auth', require('./backend/routes/auth')); // <- backend folder में routes
-app.use('/api/notes', require('./backend/routes/notes')); // <- backend folder में routes
+app.use('/api/auth', require('./backend/routes/auth'));
+app.use('/api/notes', require('./backend/routes/notes'));
 
 app.listen(port, () => {
-    console.log(`iNotebook backend listening at http://localhost:${port}`);
+    console.log(`iNotebook backend listening on port ${port}`);
 });
