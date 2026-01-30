@@ -38,13 +38,29 @@
 
 
 
+// const mongoose = require('mongoose');
+
+// const mongoURI = process.env.MONGO_URI; // Atlas URI from Render env
+
+// const connectToMongo = async () => {
+//     try {
+//         await mongoose.connect(mongoURI); // no extra options needed in Mongoose v7+
+//         console.log('MongoDB connected successfully');
+//     } catch (err) {
+//         console.error('MongoDB connection error:', err);
+//     }
+// };
+
+// module.exports = connectToMongo;
+
+
 const mongoose = require('mongoose');
 
-const mongoURI = process.env.MONGO_URI; // Atlas URI from Render env
+const mongoURI = process.env.MONGO_URI; // Must be set in Render
 
 const connectToMongo = async () => {
     try {
-        await mongoose.connect(mongoURI); // no extra options needed in Mongoose v7+
+        await mongoose.connect(mongoURI); 
         console.log('MongoDB connected successfully');
     } catch (err) {
         console.error('MongoDB connection error:', err);
