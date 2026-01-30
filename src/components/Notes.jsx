@@ -173,36 +173,51 @@
 
 // export default Notes;
 
-import React, { useContext, useRef, useState } from "react";
+
+import React, { useContext, useEffect, useState } from "react";
 import noteContext from "../context/notes/noteContext";
+import Noteitem from "./Noteitem";
+import AddNote from "./AddNote";
+import { useNavigate } from "react-router-dom";
+import { Modal, Button, Form } from "react-bootstrap";
 
-const Notes = () => {
+const Notes = (props) => {
   const context = useContext(noteContext);
-  const { notes, editNote } = context;
+  const navigate = useNavigate();
+  const { notes, getNotes, editNote } = context;
 
-  const refOpen = useRef(null);
-  const refClose = useRef(null);
-
+  const [showModal, setShowModal] = useState(false);
   const [note, setNote] = useState({
     id: "",
-    etitle: "",
-    edescription: "",
-    etag: ""
+    title: "",
+    description: "",
+    tag: "default",
   });
 
+  useEffect(() => {
+    if (localStorage.getItem("token")) {
+      getNotes();
+    } else {
+      navigate("/login");
+    }
+    // eslint-disable-next-line
+  }, []);
+
   const updateNote = (currentNote) => {
-    refOpen.current.click(); // modal open
     setNote({
       id: currentNote._id,
-      etitle: currentNote.title,
-      edescription: currentNote.description,
-      etag: currentNote.tag
+      title: currentNote.title,
+      description: currentNote.description,
+      tag: currentNote.tag,
     });
+    setShowModal(true);
   };
 
-  const handleClick = () => {
-    editNote(note.id, note.etitle, note.edescription, note.etag);
-    refClose.current.click(); // modal close
+  const handleClick = (e) => {
+    e.preventDefault();
+    editNote(note.id, note.title, note.description, note.tag);
+    setShowModal(false);
+    props.showAlert("Updated Successfully", "success");
   };
 
   const onChange = (e) => {
@@ -211,82 +226,72 @@ const Notes = () => {
 
   return (
     <>
-      {/* Hidden button to open modal */}
-      <button
-        ref={refOpen}
-        type="button"
-        className="d-none"
-        data-bs-toggle="modal"
-        data-bs-target="#editNoteModal"
-      >
-        Open
-      </button>
+      <AddNote showAlert={props.showAlert} />
 
-      {/* MODAL */}
-      <div
-        className="modal fade"
-        id="editNoteModal"
-        tabIndex="-1"
-        aria-labelledby="editNoteModalLabel"
-      >
-        <div className="modal-dialog">
-          <div className="modal-content">
-
-            <div className="modal-header">
-              <h5 className="modal-title" id="editNoteModalLabel">
-                Edit Note
-              </h5>
-              <button
-                type="button"
-                className="btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-                ref={refClose}
-              ></button>
-            </div>
-
-            <div className="modal-body">
-              <input
+      {/* Modal */}
+      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Edit Note</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Title</Form.Label>
+              <Form.Control
                 type="text"
-                className="form-control mb-2"
-                name="etitle"
-                value={note.etitle}
+                name="title"
+                value={note.title}
                 onChange={onChange}
+                minLength={5}
+                required
               />
-              <textarea
-                className="form-control mb-2"
-                name="edescription"
-                value={note.edescription}
-                onChange={onChange}
-              />
-              <input
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Description</Form.Label>
+              <Form.Control
                 type="text"
-                className="form-control"
-                name="etag"
-                value={note.etag}
+                name="description"
+                value={note.description}
+                onChange={onChange}
+                minLength={5}
+                required
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Tag</Form.Label>
+              <Form.Control
+                type="text"
+                name="tag"
+                value={note.tag}
                 onChange={onChange}
               />
-            </div>
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>
+            Close
+          </Button>
+          <Button variant="primary" onClick={handleClick}>
+            Update Note
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                data-bs-dismiss="modal"
-              >
-                Close
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={handleClick}
-              >
-                Update Note
-              </button>
-            </div>
-
-          </div>
-        </div>
+      {/* Notes List */}
+      <div className="row my-3">
+        <h2>Your Notes</h2>
+        <div className="container">{notes.length === 0 && "No notes to display"}</div>
+        {notes.map((note) => (
+          <Noteitem
+            key={note._id}
+            note={note}
+            updateNote={updateNote}
+            showAlert={props.showAlert}
+          />
+        ))}
       </div>
     </>
   );
