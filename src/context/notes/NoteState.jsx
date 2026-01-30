@@ -235,20 +235,14 @@ import { useState } from "react";
 import NoteContext from "./noteContext";
 
 const NoteState = (props) => {
-
-  // ✅ Backend URL from .env (Vercel / Local dono me kaam karega)
+  // 🔹 Backend URL from .env
   const host = process.env.REACT_APP_BACKEND_URL;
 
   const [notes, setNotes] = useState([]);
 
-  // ===============================
-  // 🔹 GET ALL NOTES
-  // ===============================
+  // 🔹 Get all notes (Protected)
   const getNotes = async () => {
-
-    // Agar login nahi hai
-    const token = localStorage.getItem("token");
-    if (!token) {
+    if (!localStorage.getItem("token")) {
       setNotes([]);
       return;
     }
@@ -258,17 +252,18 @@ const NoteState = (props) => {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "auth-token": token
-        }
+          "auth-token": localStorage.getItem("token")
+        },
       });
 
       if (!response.ok) {
-        console.error("Fetch notes failed");
+        console.error("Fetch notes failed:", response.status);
         setNotes([]);
         return;
       }
 
       const json = await response.json();
+      console.log("Fetched notes:", json);
       setNotes(json);
 
     } catch (error) {
@@ -277,112 +272,87 @@ const NoteState = (props) => {
     }
   };
 
-  // ===============================
-  // 🔹 ADD NOTE
-  // ===============================
+  // 🔹 Add a note
   const addNote = async (title, description, tag) => {
-
-    const token = localStorage.getItem("token");
-    if (!token) return;
+    if (!localStorage.getItem("token")) return;
 
     try {
       const response = await fetch(`${host}/api/notes/addnote`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "auth-token": token
+          "auth-token": localStorage.getItem("token"),
         },
-        body: JSON.stringify({ title, description, tag })
+        body: JSON.stringify({ title, description, tag }),
       });
 
       const json = await response.json();
+      console.log("Add note response:", json);
 
       if (response.ok) {
         setNotes(notes.concat(json));
       } else {
-        console.error("Add note failed:", json);
+        console.error("Add note error:", json);
       }
-
     } catch (error) {
-      console.error("Add note error:", error);
+      console.error("Add note fetch error:", error);
     }
   };
 
-  // ===============================
-  // 🔹 DELETE NOTE
-  // ===============================
+  // 🔹 Delete a note
   const deleteNote = async (id) => {
-
-    const token = localStorage.getItem("token");
-    if (!token) return;
+    if (!localStorage.getItem("token")) return;
 
     try {
       await fetch(`${host}/api/notes/deletenote/${id}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          "auth-token": token
-        }
+          "auth-token": localStorage.getItem("token"),
+        },
       });
 
-      const newNotes = notes.filter((note) => note._id !== id);
-      setNotes(newNotes);
-
+      setNotes(notes.filter((note) => note._id !== id));
     } catch (error) {
       console.error("Delete note error:", error);
     }
   };
 
-  // ===============================
-  // 🔹 EDIT NOTE
-  // ===============================
+  // 🔹 Edit a note
   const editNote = async (id, title, description, tag) => {
-
-    const token = localStorage.getItem("token");
-    if (!token) return;
+    if (!localStorage.getItem("token")) return;
 
     try {
       const response = await fetch(`${host}/api/notes/updatenote/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "auth-token": token
+          "auth-token": localStorage.getItem("token"),
         },
-        body: JSON.stringify({ title, description, tag })
+        body: JSON.stringify({ title, description, tag }),
       });
 
+      const json = await response.json();
+      console.log("Edit note response:", json);
+
       if (!response.ok) {
-        console.error("Edit note failed");
+        console.error("Edit note error:", json);
         return;
       }
 
-      let newNotes = JSON.parse(JSON.stringify(notes));
-      for (let i = 0; i < newNotes.length; i++) {
-        if (newNotes[i]._id === id) {
-          newNotes[i].title = title;
-          newNotes[i].description = description;
-          newNotes[i].tag = tag;
-          break;
-        }
-      }
+      const newNotes = notes.map((note) =>
+        note._id === id ? { ...note, title, description, tag } : note
+      );
       setNotes(newNotes);
 
     } catch (error) {
-      console.error("Edit note error:", error);
+      console.error("Edit note fetch error:", error);
     }
   };
 
-  // ===============================
   return (
     <NoteContext.Provider
-      value={{
-        notes,
-        setNotes,
-        getNotes,
-        addNote,
-        deleteNote,
-        editNote
-      }}
+      value={{ notes, setNotes, addNote, deleteNote, editNote, getNotes }}
     >
       {props.children}
     </NoteContext.Provider>
